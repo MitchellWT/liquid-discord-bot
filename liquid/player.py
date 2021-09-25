@@ -59,6 +59,12 @@ class Player(commands.Cog, name='Player'):
         downloader_info = await Downloader.get_info(self, url=song)
         info = downloader_info[0]
         queueObject = downloader_info[1]
+        title = 'Bottom Text'
+
+        if ('title' in info): 
+            title = info['title']
+        elif ('entries' in info):
+            title = info['entries'][0]['title']
 
         # For adding playlist to queue
         if queueObject['queue']:
@@ -67,10 +73,10 @@ class Player(commands.Cog, name='Player'):
             return await msg.send(f"Added playlist {queueObject['title']} to queue!".title())
         
         self.player[msg.guild.id]['queue'].append({
-            'title': info['entries'][0]['title'], 
+            'title': title, 
             'author': msg
         })
-        return await msg.send(f"{info['entries'][0]['title']} added to queue!".title())
+        return await msg.send(f"{title} added to queue!".title())
 
     # Makes the bot leave voice channel If music is not being played
     async def leave_check(self, msg):
@@ -155,6 +161,8 @@ class Player(commands.Cog, name='Player'):
         # Sets up downloader 
         youtube_downloader = youtube_dl.YoutubeDL(options)
         downloader = await Downloader.video_url(song, youtube_downloader=youtube_downloader, loop=self.bot.loop)
+        if downloader is None:
+            return await msg.send('It looks like this video is age restricted, I can\'t play it!\nOr it\'s a spotify link!')
         download = downloader[0]
         data = downloader[1]
         self.player[msg.guild.id]['name'] = audio_name
@@ -213,14 +221,13 @@ class Player(commands.Cog, name='Player'):
     # Performs some checks to see If play can execute correctly
     @play.before_invoke
     async def before_play(self, msg):
-        print('check ran')
         # Check If user requesting song is in a voice channel
         if msg.author.voice is None:
             return await msg.send('Please join a voice channel to play music!'.title())
 
         # Check If bot is in voice channel
         if msg.voice_client is None:
-            return await msg.author.voice.channel.connect()
+            await msg.author.voice.channel.connect()
 
         # Check If bot and user are in the same voice channel
         if msg.voice_client.channel != msg.author.voice.channel:
@@ -229,6 +236,7 @@ class Player(commands.Cog, name='Player'):
                 return await msg.voice_client.move_to(msg.author.voice.channel)
             else:
                 return await msg.send("Please join the same voice channel as the bot to add song to queue!")
+        return await msg.send('One moment, I\'m sussing it out!')
 
     # Repeat command, loops the currently playing song, Toggleable
     @command(name='repeat', case_insensitive=True)
@@ -379,7 +387,8 @@ class Player(commands.Cog, name='Player'):
     async def join(self, msg, *, channel: discord.VoiceChannel = None):
         # Check If bot is in another channel
         if msg.voice_client is not None:
-            return await msg.send(f"Bot is already in a voice channel\nDid you mean to use {msg.prefix}moveTo?")
+            None
+            # return await msg.send(f"Bot is already in a voice channel\nDid you mean to use {msg.prefix}moveTo?")
         elif msg.voice_client is None:
             # Check If channel variables was passed
             if channel is None:

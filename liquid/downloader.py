@@ -22,7 +22,9 @@ class Downloader(discord.PCMVolumeTransformer):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: youtube_downloader.extract_info(url, download = not stream))
         song_list = {'queue': []}
-        
+
+        if data is None:
+            return None
         if 'entries' in data:
             if len(data['entries']) > 1:
                 playlist_titles = [title['title'] for title in data['entries']]
