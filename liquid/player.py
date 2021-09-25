@@ -57,21 +57,20 @@ class Player(commands.Cog, name='Player'):
     # Adds song to the queue
     async def queue(self, msg, song):
         downloader_info = await Downloader.get_info(self, url=song)
-        title = downloader_info[0]
-        data = downloader_info[1]
+        info = downloader_info[0]
+        queueObject = downloader_info[1]
 
         # For adding playlist to queue
-        if data['queue']:
-            await self.playlist(data, msg)
+        if queueObject['queue']:
+            await self.playlist(queueObject, msg)
             # Needs to be embeded to increase output quality
-            return await msg.send(f"Added playlist {data['title']} to queue!".title())
+            return await msg.send(f"Added playlist {queueObject['title']} to queue!".title())
         
         self.player[msg.guild.id]['queue'].append({
-            'title': title, 
+            'title': info['entries'][0]['title'], 
             'author': msg
         })
-
-        return await msg.send(f"{title} added to queue!".title())
+        return await msg.send(f"{info['entries'][0]['title']} added to queue!".title())
 
     # Makes the bot leave voice channel If music is not being played
     async def leave_check(self, msg):
@@ -189,8 +188,6 @@ class Player(commands.Cog, name='Player'):
     # Play command, can play from youtube URL, youtube search terms, soundcloud URL, and bandcamp URL
     @command(name='play', case_insensitive=True)
     async def play(self, msg, *, song):
-        print(song)
-
         if msg.guild.id in self.player:
             # For adding songs to the queue
             if msg.voice_client.is_playing() is True or self.player[msg.guild.id]['queue']:
@@ -216,6 +213,7 @@ class Player(commands.Cog, name='Player'):
     # Performs some checks to see If play can execute correctly
     @play.before_invoke
     async def before_play(self, msg):
+        print('check ran')
         # Check If user requesting song is in a voice channel
         if msg.author.voice is None:
             return await msg.send('Please join a voice channel to play music!'.title())

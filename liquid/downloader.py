@@ -54,16 +54,16 @@ class Downloader(discord.PCMVolumeTransformer):
             'source_address': '0.0.0.0'
         })
         info = youtube.extract_info(url, download=False)
-        data_one = {'queue': []}
+        queueObject = {'queue': []}
 
-        if 'entries' in data_one:
-            if len(data_one['entries']) > 1:
-                playlist_titles = [title['title'] for title in data_one['entries']]
-                data_one = {
-                    'title': data_one['title'], 
+        if 'entries' in queueObject:
+            if len(queueObject['entries']) > 1:
+                playlist_titles = [title['title'] for title in queueObject['entries']]
+                queueObject = {
+                    'title': queueObject['title'], 
                     'queue': playlist_titles
                 }
 
             info = info['entries'][0]['title']
 
-        return info, data_one
+        return info, queueObject
