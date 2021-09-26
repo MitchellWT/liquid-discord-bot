@@ -48,10 +48,12 @@ class Player(commands.Cog, name='Player'):
 
     # Used to add a full playlist to the queue
     async def playlist(self, data, msg):
-        for title in data['queue']:
+        for song in data['queue']:
             self.player[msg.guild.id]['queue'].append({
-                'title': title, 
-                'author': msg
+                'title': song,
+                'author': msg.author.name, 
+                'command': msg.message.content.replace('-play', '').replace('liquid play', '').strip(),
+                'message': msg
             })
 
     # Adds song to the queue
@@ -74,7 +76,9 @@ class Player(commands.Cog, name='Player'):
         
         self.player[msg.guild.id]['queue'].append({
             'title': title, 
-            'author': msg
+            'author': msg.author.name,
+            'command': msg.message.content.replace('-play', '').replace('liquid play', '').strip(),
+            'message': msg
         })
         return await msg.send(f"{title} added to queue!".title())
 
@@ -101,9 +105,7 @@ class Player(commands.Cog, name='Player'):
             msg.voice_client.play(source, after=lambda a: loop.create_task(self.done(msg)))
             msg.voice_client.source.volume = self.player[msg.guild.id]['volume']
         except Exception as E:
-            # Log error to file
-            with open('error.log', 'a') as logFile:
-                logFile.write(E)
+            print(E)
 
     # Clean up function for when a song finishes playing
     async def done(self, msg, msgId: int = None):
@@ -113,9 +115,7 @@ class Player(commands.Cog, name='Player'):
                 message = await msg.channel.fetch_message(msgId)
                 await message.delete()
             except Exception as E:
-                # Log error to file
-                with open('error.log', 'a') as logFile:
-                    logFile.write(E)
+                print(E)
 
         # When 'reset' command is called
         if self.player[msg.guild.id]['reset'] is True:
@@ -131,7 +131,7 @@ class Player(commands.Cog, name='Player'):
         # Removes song from queue
         if self.player[msg.guild.id]['queue']:
             new_song = self.player[msg.guild.id]['queue'].pop(0)
-            return await self.start_song(msg=new_song['author'], song=new_song['title'])
+            return await self.start_song(msg=new_song['message'], song=new_song['command'])
         else:
             await self.leave_check(msg)
 
@@ -194,7 +194,7 @@ class Player(commands.Cog, name='Player'):
         return msg.voice_client
 
     # Play command, can play from youtube URL, youtube search terms, soundcloud URL, and bandcamp URL
-    @command(name='play', case_insensitive=True)
+    @command(name='play', help='Plays a song or adds a song to the queue')
     async def play(self, msg, *, song):
         if msg.guild.id in self.player:
             # For adding songs to the queue
@@ -210,7 +210,8 @@ class Player(commands.Cog, name='Player'):
             self.player[msg.guild.id] = {
                 'player': None,
                 'queue': [],
-                'author': msg,
+                'author': msg.author.name,
+                'msg': msg,
                 'name': None,
                 "reset": False,
                 'repeat': False,
@@ -239,7 +240,7 @@ class Player(commands.Cog, name='Player'):
         return await msg.send('One moment, I\'m sussing it out!')
 
     # Repeat command, loops the currently playing song, Toggleable
-    @command(name='repeat', case_insensitive=True)
+    @command(name='repeat', help='Loops the currently playing song')
     async def repeat(self, msg):
         if msg.guild.id in self.player:
             if msg.voice_client.is_playing() is True:
@@ -253,8 +254,8 @@ class Player(commands.Cog, name='Player'):
             return await msg.send("No audio currently playing!")
         return await msg.send("Bot not in voice channel or playing music!")
 
-    # Reset command, resets the currently playing song to the begining
-    @command(name='reset', aliases=['restart-loop'])
+    # Reset command, resets the currently playing song to the beginning
+    @command(name='reset', aliases=['restart-loop'], help='Resets the currently playing song to the beginning')
     async def reset(self, msg):
         # Check If song is playing
         if msg.voice_client is None:
@@ -271,7 +272,7 @@ class Player(commands.Cog, name='Player'):
         return await msg.message.add_reaction(emoji='✅')
 
     # Skip command, skips the currently playing song
-    @command(name='skip', case_insensitive=True)
+    @command(name='skip', help='Skips the currently playing song')
     async def skip(self, msg):
         # Check If song is playing
         if msg.voice_client is None:
@@ -288,7 +289,7 @@ class Player(commands.Cog, name='Player'):
         return await msg.message.add_reaction(emoji='✅')
 
     # Stop command, stop the currently playing song
-    @command(name='stop', case_insensitive=True)
+    @command(name='stop', help='Stops the currently playing song')
     async def stop(self, msg):
         # Check the bot is connected to a voice channel
         if msg.voice_client is None:
@@ -306,7 +307,7 @@ class Player(commands.Cog, name='Player'):
                 return await msg.send(f"{msg.author.display_name}, there is no audio currently playing or songs in queue!")
 
     # Leave command, forces the bot to leave the voice channel
-    @command(name='leave', aliases=['get-out', 'disconnect', 'leave-voice'])
+    @command(name='leave', aliases=['get-out', 'disconnect', 'leave-voice'], help='Liquid will leave the voice channel')
     async def leave(self, msg):
         if msg.author.voice is not None and msg.voice_client is not None:
             if msg.voice_client.is_playing() is True or self.player[msg.guild.id]['queue']:
@@ -319,7 +320,7 @@ class Player(commands.Cog, name='Player'):
             return await msg.send("You must be in the same voice channel as bot to disconnect it via this command!")
 
     # Pause command, pauses the currently playing song
-    @command(name='pause', case_insensitive=True)
+    @command(name='pause', case_insensitive=True, help='Pause the currently playing song')
     async def pause(self, msg):
         if msg.author.voice is not None and msg.voice_client is not None:
             # Check If song is currently paused
@@ -330,7 +331,7 @@ class Player(commands.Cog, name='Player'):
                 await msg.message.add_reaction(emoji='✅')
 
     # Resume command, resumes a paused song from the queue
-    @command(name='resume', case_insensitive=True)
+    @command(name='resume', help='Resumes the currently paused song, If it\'s paused')
     async def resume(self, msg):
         if msg.author.voice is not None and msg.voice_client is not None:
             # Check If song is currently playing
@@ -341,7 +342,7 @@ class Player(commands.Cog, name='Player'):
                 return await msg.message.add_reaction(emoji='✅')
 
     # Queue command, shows the current song queue
-    @command(name='queue', aliases=['song-list', 'q', 'current-songs'])
+    @command(name='queue', aliases=['song-list', 'q', 'current-songs'], help='Shows the current song queue')
     async def _queue(self, msg):
         # Check If song is in queue
         if msg.voice_client is not None and msg.guild.id in self.player and self.player[msg.guild.id]['queue']:
@@ -354,7 +355,7 @@ class Player(commands.Cog, name='Player'):
             # Adds songs to embed object
             for song in self.player[msg.guild.id]['queue']:
                 embed.add_field(
-                    name=f"{song['author'].author.name}", 
+                    name=f"{song['author']}", 
                     value=song['title'], 
                     inline=False
                 )
@@ -363,7 +364,7 @@ class Player(commands.Cog, name='Player'):
         return await msg.send("No songs in queue!")
 
     # Song-info command, shows information on the currently playing song
-    @command(name='song-info', aliases=['song?', 'nowplaying', 'current-song'])
+    @command(name='song-info', aliases=['song?', 'nowplaying', 'current-song'], help='Shows information on currently playing song')
     async def song_info(self, msg):
         # Check If song is playing
         if msg.voice_client is not None and msg.voice_client.is_playing() is True:
@@ -383,7 +384,7 @@ class Player(commands.Cog, name='Player'):
         return await msg.send(f"No songs currently playing!".title(), delete_after=30)
 
     # Join command, forces the bot to join to a channel
-    @command(name='join', aliases=['move-bot', 'move-b', 'mb', 'mbot'])
+    @command(name='join', aliases=['move-bot', 'move-b', 'mb', 'mbot'], help='Liquid will join the voice channel your in')
     async def join(self, msg, *, channel: discord.VoiceChannel = None):
         # Check If bot is in another channel
         if msg.voice_client is not None:
@@ -413,7 +414,7 @@ class Player(commands.Cog, name='Player'):
             return await msg.send("Please join the same voice channel as the bot to add song to queue!".title())
 
     # Volume command, changes the volume output from the bot
-    @command(name='volume', aliases=['vol'])
+    @command(name='volume', aliases=['vol'], help='Change output volume of liquid')
     async def volume(self, msg, vol: int):
         if vol > 200:
             vol = 200
