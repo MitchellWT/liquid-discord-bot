@@ -1,6 +1,6 @@
 import discord
 import asyncio
-import youtube_dl
+import yt_dlp
 
 # Downloads music from youtube using youtube_dl
 class Downloader(discord.PCMVolumeTransformer):
@@ -43,7 +43,7 @@ class Downloader(discord.PCMVolumeTransformer):
 
     # Gets info of the next song but not downloading the actual file
     async def get_info(self, url):
-        youtube = youtube_dl.YoutubeDL({
+        youtube = yt_dlp.YoutubeDL({
             'default_search': 'auto',
             "ignoreerrors": True,
             'quiet': True,

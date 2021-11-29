@@ -1,5 +1,5 @@
 import discord
-import youtube_dl
+import yt_dlp
 import random
 import string
 import asyncio
@@ -159,7 +159,7 @@ class Player(commands.Cog, name='Player'):
         options['outtmpl'] = options['outtmpl'].format(audio_name)
 
         # Sets up downloader 
-        youtube_downloader = youtube_dl.YoutubeDL(options)
+        youtube_downloader = yt_dlp.YoutubeDL(options)
         downloader = await Downloader.video_url(song, youtube_downloader=youtube_downloader, loop=self.bot.loop)
         if downloader is None:
             return await msg.send('It looks like this video is age restricted, I can\'t play it!\nOr it\'s a spotify link!')
