@@ -6,9 +6,10 @@ name = "pypi"
 [packages]
 pynacl = "*"
 yt-dlp = "*"
-discord.py = "*"
+"discord.py" = "~=1.7.3"
 python-dotenv = "*"
 google-api-python-client = "*"
+discord = {py = "*"}
 
 [dev-packages]
 
