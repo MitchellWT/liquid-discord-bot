@@ -1,13 +1,14 @@
 import os
 import logging
 
+from discord import Intents
 from dotenv import load_dotenv
 from discord.ext import commands
 
 load_dotenv()
 
 # Global variables
-bot = commands.Bot(command_prefix=['-', 'liquid '])
+bot = commands.Bot(command_prefix=['-', 'liquid '], intents=Intents().default())
 token = os.getenv('DISCORD_TOKEN')
 
 # Logging
